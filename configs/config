@@ -1,0 +1,33 @@
+{
+    "box_encoding_method": "classaware_all_class_box_encoding",
+    "downsample_by_voxel_size": null,
+    "eval_is_training": true,
+    "graph_gen_kwargs": {
+        "add_rnd3d": true,
+        "base_voxel_size": 0.1,
+        "downsample_method": "random",
+        "level_configs": [
+            {
+                "graph_gen_kwargs": {
+                    "num_neighbors": -1,
+                    "radius": 0.2
+                },
+                "graph_gen_method": "disjointed_rnn_local_graph_v3",
+                "graph_level": 0,
+                "graph_scale": 1
+            },
+            {
+                "graph_gen_kwargs": {
+                    "num_neighbors": -1,
+                    "radius": 2
+                },
+                "graph_gen_method": "disjointed_rnn_local_graph_v3",
+                "graph_level": 1,
+                "graph_scale": 1
+            }
+        ]
+    },
+    "graph_gen_method": "multi_level_local_graph_v3",
+    "input_features": "rgb",
+    "label_method": "Car"
+}

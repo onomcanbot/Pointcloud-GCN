@@ -1,0 +1,42 @@
+{
+    "data_aug_configs": [
+        {
+            "method_kwargs": {
+                "expend_factor": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "method_name": "normal",
+                "yaw_std": 0.39269908169872414
+            },
+            "method_name": "random_rotation_all"
+        },
+        {
+            "method_kwargs": {
+                "flip_prob": 0.5
+            },
+            "method_name": "random_flip_all"
+        },
+        {
+            "method_kwargs": {
+                "appr_factor": 10,
+                "expend_factor": [
+                    1.1,
+                    1.1,
+                    1.1
+                ],
+                "max_overlap_num_allowed": 100,
+                "max_overlap_rate": 0.01,
+                "max_trails": 100,
+                "method_name": "normal",
+                "xyz_std": [
+                    3,
+                    0,
+                    3
+                ]
+            },
+            "method_name": "random_box_shift"
+        }
+    ]
+}
