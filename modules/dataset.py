@@ -217,9 +217,7 @@ def sel_xyz_in_box2d(label, xyz, expend_factor=(1.0, 1.0, 1.0)):
 class KittiDataset(object):
     """A class to interact with KITTI dataset."""
 
-    def __init__(self, image_dir, point_dir, calib_dir, label_dir,
-        index_filename=None, is_training=True, is_raw=False, difficulty=-100,
-        num_classes=8):
+    def __init__(self, index_filename=None, is_training=True, is_raw=False, difficulty=-100, num_classes=8):
         """
         Args:
             image_dir: a string of the path to image folder.
@@ -228,25 +226,34 @@ class KittiDataset(object):
             label_dir: a string of the path to the label folder.
             index_filename: a string containing a path an index file.
         """
-
+        """
         self._image_dir = image_dir
         self._point_dir = point_dir
         self._calib_dir = calib_dir
         self._label_dir = label_dir
+"""
+
         self._index_filename = index_filename
+        """
         if index_filename:
-            self._file_list = self._read_index_file(index_filename)
+"""
+        self._file_list = self._read_index_file(index_filename)
+
+        """
         else:
             self._file_list = self._get_file_list(self._image_dir)
         self._verify_file_list(
             self._image_dir, self._point_dir, self._label_dir, self._calib_dir,
             self._file_list, is_training, is_raw)
+        """
+
         self._is_training = is_training
         self._is_raw = is_raw
         self.num_classes = num_classes
         self.difficulty = difficulty
         self._max_image_height = 376
         self._max_image_width = 1242
+        
 
     def __str__(self):
         """Generate a string summary of the dataset"""
