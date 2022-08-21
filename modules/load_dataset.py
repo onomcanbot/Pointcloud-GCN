@@ -12,6 +12,7 @@ import argparse
 from util.config_util import save_config, save_train_config, \
     load_train_config, load_config
 
+import time
 def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     sparse_mx = sparse_mx.tocoo().astype(np.float32)
     indices = torch.from_numpy(
@@ -19,7 +20,7 @@ def sparse_mx_to_torch_sparse_tensor(sparse_mx):
     values = torch.from_numpy(sparse_mx.data)
     shape = torch.Size(sparse_mx.shape)
     return torch.sparse.FloatTensor(indices, values, shape)
-
+'''
 def convert_sparse_matrix_v1(vertex_coord_list, keypoint_indices_list, edges_list):
     key_idx = np.squeeze(keypoint_indices_list[0])
 
@@ -100,6 +101,7 @@ def get_adj_matrix_v1(vertex, keypoint, edge, is_local=False, norm_type=2):
     near_point = vertex[edge[:, 0]]
     key_point = vertex[edge[:, 1]]
     norm = np.linalg.norm((near_point - key_point), axis=1, ord=norm_type)
+    print("norm           :",norm)
     max_norm = np.amax(norm)
 
     # Normalization (y = -x + 1)
@@ -125,11 +127,12 @@ def get_feature_matrix_v1(point_features, point_coordinates, keypoint_indices, e
     #print(feature_matrix.shape)
 
     return feature_matrix
-
+'''
 def get_adj_matrix(vertex, keypoint, edge, edge_num, is_local=False, norm_type=2):
+    from pprint import pprint
     key_idx = np.squeeze(keypoint)
+    print("vertex",vertex)
 
-    #print(edge)
 
     if is_local:
         # Local_Graph : Keypoint Index -> Original Vertex Index
@@ -138,9 +141,12 @@ def get_adj_matrix(vertex, keypoint, edge, edge_num, is_local=False, norm_type=2
     # Add self attention to graph
     loop = np.array([[key_idx], [key_idx]]).transpose().squeeze()
     loop_data = -1 * np.array(edge_num)
+    
+    #no_laplacian
+    #loop_data[:] = 0
+    #print("loop_data",loop_data)
 
-    #print("loop")
-    #print(loop)
+
 
     # Create edge connection
     edge_data = np.ones(edge.shape[0])
@@ -151,44 +157,67 @@ def get_adj_matrix(vertex, keypoint, edge, edge_num, is_local=False, norm_type=2
 
     # Concat edge and data
     edge = np.concatenate((edge, loop), axis=0)
-    edge_data = np.concatenate((edge_data, loop_data), axis=0)
+    edge_data = np.concatenate((edge_data, loop_data), axis=0) ####
+    #print("edge0",edge[:, 0])
+    #print("edge1",edge[:, 1])
 
+    #Laplacian matrix !!!!!!!!!!!!!!!!!!!
+    #adj_matrix_relative = -1*sp.coo_matrix((edge_data, (edge[:, 0], edge[:, 1])),
+    #                    shape=(vertex.shape[0], vertex.shape[0]),
+    #                    dtype=np.float32)
+    #print("adj_matrix_relative",adj_matrix_relative.shape)
+    #deformed Laplacian matrix !!!!!!!!!!!!!!!!!!!!!
+    print("edge_data",edge_data.shape)
     adj_matrix_relative = sp.coo_matrix((edge_data, (edge[:, 0], edge[:, 1])),
                         shape=(vertex.shape[0], vertex.shape[0]),
                         dtype=np.float32)
-
+    #print("edge[:, 0]",edge[:, 0].shape)
+    #print("edge[:, 1]",edge[:, 1].shape)
+    #mat = adj_matrix_relative.tolil()
+    #print("mat",mat)
+    #with open("matrix.txt","w") as f:
+        #f.write(str(mat))
+    
     return adj_matrix_normal, adj_matrix_relative
 
 def get_feature_matrix(point_features, point_coordinates, keypoint_indices, edges_list):
     keypoint_coord = point_coordinates[1]
+    print("",)
+    #print("point_coordinates",point_coordinates)
 
     keypoint_feature = point_features[keypoint_indices[0]]
+    #print("keypoint_feature",keypoint_feature)
     keypoint_feature = np.reshape(keypoint_feature, [keypoint_feature.shape[0], keypoint_feature.shape[2]])
+    #print("keypoint_feature",keypoint_feature)
 
     #print(keypoint_coord.shape)
     #print(keypoint_feature.shape)
 
     global_feature_matrix = np.concatenate((keypoint_coord, keypoint_feature), axis=1)    
+    #print("global_feature_matrix",global_feature_matrix)
 
     #print(feature_matrix.shape)
 
     local_coord = point_coordinates[0]
+    #print("local_coord",local_coord)
     local_feature_matrix = np.concatenate((local_coord, point_features), axis=1)
+    print("local_feature_matrix",local_feature_matrix.shape)
 
     return local_feature_matrix, global_feature_matrix
 
 
-def fetch_data(dataset, frame_idx, train_config, config):
-    
+def fetch_data(dataset, frame_idx, train_config, config, ttime=False):
+    data_start = time.time()
     aug_fn = preprocess.get_data_aug(train_config['data_aug_configs'])
     
     BOX_ENCODING_LEN = 10
     
     graph_generate_fn= get_graph_generate_fn(config['graph_gen_method'])
-
+    
     cam_rgb_points = dataset.get_ply_point(frame_idx)
     box_label_list = dataset.get_ply_label(frame_idx)
-    
+    data_end = time.time()
+    graph_start = time.time()
     (vertex_coord_list, keypoint_indices_list, edges_list, edges_num_list) = \
         graph_generate_fn(cam_rgb_points.xyz, **config['graph_gen_kwargs'])
 
@@ -196,6 +225,7 @@ def fetch_data(dataset, frame_idx, train_config, config):
     global_idx = -1
 
     adj_local, adj_local_relative = get_adj_matrix(vertex_coord_list[local_idx], keypoint_indices_list[local_idx], edges_list[local_idx], edges_num_list[local_idx], is_local=True, norm_type=2)
+
     adj_global, adj_global_relative = get_adj_matrix(vertex_coord_list[global_idx], keypoint_indices_list[global_idx],
                                                                                     edges_list[global_idx], edges_num_list[global_idx],  is_local=False, norm_type=2)
 
@@ -208,7 +238,8 @@ def fetch_data(dataset, frame_idx, train_config, config):
         input_v = np.zeros((cam_rgb_points.attr.shape[0], 1))
 
     feature_matrix_local, feature_matrix_global = get_feature_matrix(input_v, vertex_coord_list, keypoint_indices_list, edges_list)
-
+    print("feature_matrix_local",feature_matrix_local)
+    graph_end = time.time()
     last_layer_points_xyz = vertex_coord_list[-1]
     
     if config['label_method'] == 'Car':
@@ -229,7 +260,14 @@ def fetch_data(dataset, frame_idx, train_config, config):
     cls_labels = cls_labels.astype(np.float32)
     encoded_boxes = encoded_boxes.astype(np.float32)
     valid_boxes = valid_boxes.astype(np.float32)
-    return(input_v, vertex_coord_list, keypoint_indices_list, edges_list,
+    if ttime:
+        data_time = data_end - data_start
+        graph_time = graph_end - graph_start
+        return (input_v, vertex_coord_list, keypoint_indices_list, edges_list,
+        cls_labels, encoded_boxes, valid_boxes, adj_local_relative, adj_global, 
+        adj_global_relative, feature_matrix_local, feature_matrix_global), data_time, graph_time
+    else:
+        return(input_v, vertex_coord_list, keypoint_indices_list, edges_list,
         cls_labels, encoded_boxes, valid_boxes, adj_local_relative, adj_global, 
         adj_global_relative, feature_matrix_local, feature_matrix_global)
 
@@ -459,4 +497,3 @@ if __name__ == "__main__":
     print(f"valid_boxes: {valid_boxes.shape}")
     print(valid_boxes)
     print(f"max: {valid_boxes.max()}, min:{valid_boxes.min()}, sum: {valid_boxes.sum()}")
-
