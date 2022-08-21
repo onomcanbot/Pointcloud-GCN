@@ -236,10 +236,4 @@ if __name__ == "__main__":
     gt_labels = iter(gt_labels)
        """
     print(calc_detection_voc_prec_rec(pred_bboxes, pred_labels, pred_scores, gt_bboxes, gt_labels, gt_difficults=gt_difficults, iou_thresh=iou_thresh))
-    
-    
-    
-    
-    
-    
-    
+  
