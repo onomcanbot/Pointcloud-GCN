@@ -1289,7 +1289,7 @@ class KittiDataset(object):
     def get_ply_point(self, frame_idx):
 
         self._point_dir="../dataset/point/"
-        point_file = join(self._point_dir, self._file_list[frame_idx])+'.ply'
+        point_file = join(self._point_dir,"frame-"+self._file_list[frame_idx])+'.ply'
 
         points = np.genfromtxt(point_file, dtype="float", skip_header=14, usecols=(0, 1, 2))
         rgb = np.genfromtxt(point_file, dtype="float", skip_header=14, usecols=(3, 4, 5))
