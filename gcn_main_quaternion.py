@@ -28,7 +28,7 @@ if torch.cuda.is_available() == True:
 
 TRAIN_CONFIG_PATH = "./configs/train_config"
 CONFIG_PATH = "./configs/config"
-DATASET_DIR = "./dataset/kitti"
+#DATASET_DIR = "./dataset/kitti"
 DATASET_LIST = "../dataset/split.txt"
 
 train_config = load_train_config(TRAIN_CONFIG_PATH)
@@ -98,10 +98,6 @@ RAW_PRED = False
 
 # input function ==============================================================
 dataset = KittiDataset(
-    os.path.join(DATASET_DIR, 'image/training/image_2'),
-    os.path.join(DATASET_DIR, 'velodyne/training/velodyne/'),
-    os.path.join(DATASET_DIR, 'calib/training/calib/'),
-    os.path.join(DATASET_DIR, 'labels/training/label_2'),
     DATASET_LIST,
     num_classes=model_args["pred_cls_num"])
 
